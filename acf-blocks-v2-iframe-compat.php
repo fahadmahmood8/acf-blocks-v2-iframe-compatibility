@@ -3,7 +3,7 @@
  * Plugin Name:       ACF Blocks V2 Iframe Compatibility
  * Plugin URI:        https://advancedcustomfields.com
  * Description:       Forces the WordPress block editor to not use the iframe canvas, if there's an ACF v2 block on the site. This plugin is intended to give site owners more time to migrate to the iframe experience provided by core. It should not be used permanently.
- * Version:           1.0.0
+ * Version:           1.0.1
  * Requires PHP:      7.4
  * Author:            ACF
  * Author URI:        https://advancedcustomfields.com
@@ -23,7 +23,7 @@ if ( defined( 'ABIC_LOADED' ) ) {
 }
 
 define( 'ABIC_LOADED', true );
-define( 'ABIC_VERSION', '1.0.0' );
+define( 'ABIC_VERSION', '1.0.1' );
 
 /**
  * Cap ACF's default block version for blocks registered without an explicit
@@ -99,3 +99,91 @@ function abic_enqueue(): void {
 		wp_add_inline_script( 'wp-element', $js, 'after' );
 	}
 }
+	
+add_action( 'admin_head', function() {
+    $screen = get_current_screen();
+    if ( ! $screen || ! in_array( $screen->id, array( 'post', 'page' ), true ) ) {
+        // Also covers custom post types via $screen->is_block_editor()
+        if ( ! $screen || ! $screen->is_block_editor() ) {
+            return;
+        }
+    }
+	?>
+<style>
+/* Only affect ACF block modals */
+.acf-expanded-editor-panel-overlay {
+  /* Remove the dark backdrop so the editor behind stays visible */
+  background: transparent !important;
+  pointer-events: none; /* let clicks pass through to the editor */
+
+  /* Pin the overlay to the left edge of the editor area */
+  position: fixed !important;
+  top: var(--wp-admin--admin-bar--height, 32px) !important;
+  left: 160px !important; /* WP admin menu width, adjust if collapsed */
+  right: 280px !important; /* leave room for the right sidebar */
+  bottom: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  z-index: 100000 !important;
+}
+
+/* The modal frame itself: make it wide and left-aligned */
+.acf-expanded-editor-panel-overlay .acf-block-form-modal {
+  pointer-events: auto; /* modal is clickable again */
+  position: relative !important;
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border-right: 1px solid #ddd !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Let the inner content scroll within the frame */
+.acf-expanded-editor-panel-overlay .components-modal__content {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  max-height: 100% !important;
+}
+
+/* Keep the header (with "Done" button) sticky at top */
+.acf-expanded-editor-panel-overlay .components-modal__header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 2 !important;
+  background: #fff !important;
+}
+
+/* Optional: give the form container some breathing room */
+.acf-expanded-editor-panel-overlay .acf-modal-block-form-container {
+  padding: 16px 20px !important;
+}
+
+/* Repeater table: make sure it can use the full width */
+.acf-expanded-editor-panel-overlay .acf-repeater .acf-table {
+  width: 100% !important;
+}
+.acf-expanded-editor-panel-overlay .acf-repeater .acf-row td.acf-fields {
+  width: auto !important;
+}
+
+/* If the admin menu is collapsed (mobile / focus mode), override left offset */
+body.folded .acf-expanded-editor-panel-overlay {
+  left: 36px !important;
+}
+@media (max-width: 782px) {
+  .acf-expanded-editor-panel-overlay {
+    left: 0 !important;
+    right: 0 !important;
+  }
+}
+</style>    
+    <?php
+});
