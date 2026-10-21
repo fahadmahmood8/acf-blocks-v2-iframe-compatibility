@@ -3,7 +3,7 @@
  * Plugin Name:       ACF Blocks V2 Iframe Compatibility
  * Plugin URI:        https://advancedcustomfields.com
  * Description:       Forces the WordPress block editor to not use the iframe canvas, if there's an ACF v2 block on the site. This plugin is intended to give site owners more time to migrate to the iframe experience provided by core. It should not be used permanently.
- * Version:           1.0.1
+ * Version:           1.0.2
  * Requires PHP:      7.4
  * Author:            ACF
  * Author URI:        https://advancedcustomfields.com
@@ -110,78 +110,142 @@ add_action( 'admin_head', function() {
     }
 	?>
 <style>
-/* Only affect ACF block modals */
-.acf-expanded-editor-panel-overlay {
-  /* Remove the dark backdrop so the editor behind stays visible */
-  background: transparent !important;
-  pointer-events: none; /* let clicks pass through to the editor */
+/* ==========================================================
+   ACF modal → left-docked, full-height editor panel
+   ========================================================== */
 
-  /* Pin the overlay to the left edge of the editor area */
+:root {
+  --acf-modal-right-offset: 280px;
+}
+
+/* No block sidebar rendered → no gap on the right */
+html body:not(:has(.interface-interface-skeleton__sidebar .interface-complementary-area)) {
+  --acf-modal-right-offset: 0px;
+}
+
+@media (max-width: 782px) {
+  :root {
+    --acf-modal-right-offset: 0px;
+  }
+}
+
+/* ---------- Overlay: transparent fullscreen shell ---------- */
+html body .components-modal__screen-overlay.acf-expanded-editor-panel-overlay {
   position: fixed !important;
-  top: var(--wp-admin--admin-bar--height, 32px) !important;
-  left: 160px !important; /* WP admin menu width, adjust if collapsed */
-  right: 280px !important; /* leave room for the right sidebar */
-  bottom: 0 !important;
+  inset: 0 !important;
   width: auto !important;
   height: auto !important;
-  display: flex !important;
-  align-items: stretch !important;
-  justify-content: flex-start !important;
+  background: transparent !important;
+  pointer-events: none !important;
+  display: block !important;
   z-index: 100000 !important;
 }
 
-/* The modal frame itself: make it wide and left-aligned */
-.acf-expanded-editor-panel-overlay .acf-block-form-modal {
-  pointer-events: auto; /* modal is clickable again */
-  position: relative !important;
+/* ---------- Frame: fixed panel right of admin menu ---------- */
+html body .components-modal__screen-overlay.acf-expanded-editor-panel-overlay > .components-modal__frame,
+html body .components-modal__screen-overlay.acf-expanded-editor-panel-overlay > .components-modal__frame.acf-block-form-modal,
+html body .components-modal__screen-overlay.acf-expanded-editor-panel-overlay > .acf-block-form-modal {
+  position: fixed !important;
+  top: var(--wp-admin--admin-bar--height, 32px) !important;
+  left: 160px !important;
+  right: var(--acf-modal-right-offset, 280px) !important;
+  bottom: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
   margin: 0 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  height: 100% !important;
-  max-height: 100% !important;
+  padding: 0 !important;
+  transform: none !important;
+  align-self: auto !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  border-right: 1px solid #ddd !important;
+  pointer-events: auto !important;
   display: flex !important;
   flex-direction: column !important;
 }
 
-/* Let the inner content scroll within the frame */
-.acf-expanded-editor-panel-overlay .components-modal__content {
+/* ---------- Content: column flex ---------- */
+html body .components-modal__screen-overlay.acf-expanded-editor-panel-overlay > .components-modal__frame > .components-modal__content {
   flex: 1 1 auto !important;
-  overflow-y: auto !important;
-  max-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
 }
 
-/* Keep the header (with "Done" button) sticky at top */
-.acf-expanded-editor-panel-overlay .components-modal__header {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 2 !important;
+/* ---------- Header: in flow ---------- */
+html body .components-modal__screen-overlay.acf-expanded-editor-panel-overlay > .components-modal__frame > .components-modal__content > .components-modal__header {
+  position: relative !important;
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  max-height: none !important;
+  padding: 12px 20px !important;
+  border-bottom: 1px solid #ddd !important;
   background: #fff !important;
 }
 
-/* Optional: give the form container some breathing room */
-.acf-expanded-editor-panel-overlay .acf-modal-block-form-container {
+/* ---------- Children container: scrolls ---------- */
+html body .components-modal__screen-overlay.acf-expanded-editor-panel-overlay > .components-modal__frame > .components-modal__content > .components-modal__children-container {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* ---------- Inner wrappers full width ---------- */
+html body .components-modal__screen-overlay.acf-expanded-editor-panel-overlay .acf-modal-block-form-container,
+html body .components-modal__screen-overlay.acf-expanded-editor-panel-overlay .acf-block-panel,
+html body .components-modal__screen-overlay.acf-expanded-editor-panel-overlay .acf-block-fields {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+html body .components-modal__screen-overlay.acf-expanded-editor-panel-overlay .acf-modal-block-form-container {
   padding: 16px 20px !important;
 }
 
-/* Repeater table: make sure it can use the full width */
-.acf-expanded-editor-panel-overlay .acf-repeater .acf-table {
+/* ---------- Repeater stretches, kill inline mini widths ---------- */
+html body .components-modal__screen-overlay.acf-expanded-editor-panel-overlay .acf-repeater > table {
   width: 100% !important;
+  table-layout: auto !important;
 }
-.acf-expanded-editor-panel-overlay .acf-repeater .acf-row td.acf-fields {
+html body .components-modal__screen-overlay.acf-expanded-editor-panel-overlay .acf-repeater .acf-row > td.acf-row-handle {
+  width: 30px !important;
+  min-width: 30px !important;
+}
+html body .components-modal__screen-overlay.acf-expanded-editor-panel-overlay .acf-repeater .acf-row > td.acf-fields {
   width: auto !important;
 }
 
-/* If the admin menu is collapsed (mobile / focus mode), override left offset */
-body.folded .acf-expanded-editor-panel-overlay {
+/* ---------- Left offset variants ---------- */
+
+/* Folded admin menu = 36px */
+html body.folded .components-modal__screen-overlay.acf-expanded-editor-panel-overlay > .components-modal__frame {
   left: 36px !important;
 }
+
+/* Fullscreen / distraction-free = admin menu hidden */
+html body.is-fullscreen-mode .components-modal__screen-overlay.acf-expanded-editor-panel-overlay > .components-modal__frame,
+html body:has(.editor-editor-interface.is-distraction-free) .components-modal__screen-overlay.acf-expanded-editor-panel-overlay > .components-modal__frame {
+  left: 0 !important;
+}
+
+/* Mobile: admin menu hidden, sidebar overlays */
 @media (max-width: 782px) {
-  .acf-expanded-editor-panel-overlay {
+  html body .components-modal__screen-overlay.acf-expanded-editor-panel-overlay > .components-modal__frame {
     left: 0 !important;
-    right: 0 !important;
   }
 }
 </style>    
